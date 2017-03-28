@@ -1,17 +1,19 @@
 <!DOCTYPE HTML>
+
 <?php
 	if ($_SERVER['REQUEST_METHOD'] == "POST")
 		{
-			session_start();
-			
-			require ('mysqli_connect.php'); //PHP file that executes connection to the database (EDITING REQUIRED)
+			session_start();			
+			require ('mysqli_connect.php'); //PHP file that executes connection to the database
 			
 			//Define variables used to compare user input to the database
 			$email = $_REQUEST['Email']; 
-			$password = $_REQUEST['Pword'];	
+			$password = $_REQUEST['Password'];	
 			
 			//SQL query from the database to select email and password from the table that contains both
-			$sql = "SELECT User_ID, Email, Pword FROM Users WHERE Email = '$email' AND Pword= '$password'"; 
+			$sql = "SELECT User_ID, Email, Pword FROM users WHERE Email = '$email' AND Pword = '$password'"; 
+			//TESTING PURPOSES ONLY
+			echo $sql;
 			
 			$rs = mysqli_query($dbc, $sql); //record set variable from connection to database and sql query statement
 			
@@ -24,7 +26,7 @@
 				
 			else //invalid login
 				{
-					$errmsg = "== Username or Password is Not Correct =="; //Or set some sort of error message of your choice
+					$errmsg = "== Invalid Email or Password. ==";
 				}
 		}
 ?>
@@ -43,14 +45,14 @@
 		$lastName = $_REQUEST['LName'];
 		$phone = $_REQUEST['Phone'];
 		$department = $_REQUEST['Department'];
-		$password = $_REQUEST['Pword'];
+		$password = $_REQUEST['Password'];
 		
 		//Develop regular expressions
 		$regex_email = "/^[^0-9][A-z0-9_]+([.][A-z0-9_]+)*[@][A-z0-9_]+([.][A-z0-9_]+)*[.][A-z]{2,4}$/"; //For e-mail
 		$regex_phone = "/^[^0-9]{10}$/"; //For phone
-									
+		
 		$errors = array(); //Set array to store error messages
-									
+		
 		//Perform validation checks
 		if (strpbrk($email, '@') == FALSE)
 			{$errors[] = "E-mail must contain '@'.";}
@@ -66,11 +68,11 @@
 			{$errors[] = "Please enter a phone number without dashes.";} //regular expression validation for phone 
 		if (empty($_POST['Department']))
 			{$errors[] = "Please select a department.";}
-		if (strlen($_POST['Pword']) < 8 )
+		if (strlen($_POST['Password']) < 8 )
 			{$errors[] = "Password must be at least 8 characters.";}
 		elseif (strpbrk($password, '0123456789') == FALSE)
 			{$errors[] = "Password must contain at least one number.";}
-
+			
 		return $errors;
 	}
 ?>
@@ -82,7 +84,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>MGA Knight Riders</title>
-    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
     <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/css/bootstrap-select.min.css">
@@ -94,7 +96,7 @@
     <div class="container"><div id="container">
       <div class="page-header">
         <div class="logoContainer">
-          <a href="index.html" title="MGA Knight Riders: Login">
+          <a href="index.php" title="MGA Knight Riders: Login">
             <img class="logoSmall" src="images/mga/MiddleGeorgia_Inst_Vert.jpg" />
             <img class="logoBig" src="images/mga/MiddleGeorgia_Inst_EXHoriz.jpg" />
           </a>
@@ -105,18 +107,24 @@
           <div class="col-sm-4 col-xs-2"></div>
           
           <div class="col-sm-4 col-xs-8">
-  <!-- SIGN IN FORM -->        
+  <!-- SIGN IN FORM --> 
+			<div>
+				<?php
+					if(isset($errmsg))
+						{
+							echo $errmsg;
+						}
+				?>
+			</div>
             <form id="loginForm" class="text-center center">
               <div>
-                <input id="email" type="text" class="form-control text-center" name="emailInput" placeholder="MGA Email">
-                <input id="password" type="password" class="form-control text-center" name="passwordInput" placeholder="Password">
+                <input id="Email" type="text" class="form-control text-center" name="Email" placeholder="MGA Email">
+                <input id="Password" type="Password" class="form-control text-center" name="Password" placeholder="Password">
               </div>
               <br>
               <div class="center">
-                <button type="button" class="btn btn-primary indexButton" name="registerButton" data-toggle="modal" data-target="#registrationModal">Register</button>
-  <!-- PLACEHOLDER - Remove this button and uncomment the submit button. -->
-                <a class="btn btn-primary indexButton" href="welcome.html">Sign In</a>
-  <!--          <input type="submit" class="btn btn-primary indexButton" name="submitButton" value="Sign In">  -->
+                <button type="button" class="btn btn-primary indexButton" name="Register" data-toggle="modal" data-target="#registrationModal">Register</button>
+				<input type="submit" class="btn btn-primary indexButton" name="Submit" value="Sign In">
               </div>
             </form>
           </div>
@@ -135,17 +143,17 @@
                 <h1 class="text-center">Register:</h1><br>
 			<div id="registration form">
 				<?php
-					if (empty($errors) && $_SERVER['REQUEST_METHOD'] == 'POST') //Submission information is valid
+					if (isset($_REQUEST['agree']) && empty($errors) && $_SERVER['REQUEST_METHOD'] == 'POST') //Submission information is valid
 						{
 							echo "A verification email has been sent to your email address."; //NEEDS EXECUTION STATEMENT
 									
 							//Variables for the major tables are stripped from user inputs to prevent XSS attacks
-							$email = strip_tags($_POST['Email']);
+							$email = strip_tags($_POST['Email']); //Derived from HTML input variables from 'name'
 							$firstname = strip_tags($_POST['FName']);
 							$lastname = strip_tags($_POST['LName']);
 							$phone = strip_tags($_POST['Phone']);
 							$department = strip_tags($_POST['Department']);
-							$password = strip_tags($_POST['Pword']);
+							$password = strip_tags($_POST['Password']);
 								
 							//Connect to the database
 							include('mysqli_connect.php');
@@ -154,7 +162,7 @@
 							mysqli_begin_transaction($dbc);   
 									
 							//Insertion queries for use into prepared statements
-							$sqlInsertUsers = "INSERT INTO Users(Email,FName,LName,Phone,Department,Pword) VALUES (?,?,?,?,?,?)";
+							$sqlInsertUsers = "INSERT INTO users(Email,FName,LName,Phone,Department,Pword) VALUES (?,?,?,?,?,?)";
 											
 							//Initilaize (auto)incrementors          
 							$count=0;
@@ -185,12 +193,16 @@
 							mysqli_stmt_close($stmt);
 							mysqli_close($dbc);
 						}
-					elseif (!empty($errors) && $_SERVER['REQUEST_METHOD'] == 'POST') //Display errors for invalid transmission
+					elseif (isset($_REQUEST['agree']) && !empty($errors) && $_SERVER['REQUEST_METHOD'] == 'POST') //Display errors for invalid transmission
 						{
 							foreach ($errors as $msg)
 							{
 								echo $msg . "<br>";
 							}
+						}
+					else
+						{
+							echo "You must agree to the Terms of Service.";
 						}
 				?>
 			</div>				
@@ -200,10 +212,10 @@
 
                     <div class="col-sm-4 col-xs-8">
                       <div>
-                        <input id="registrationFname" type="text" class="form-control" name="registrationFnameInput" placeholder="First Name">
-                        <input id="registrationLname" type="text" class="form-control" name="registrationLnameInput" placeholder="Last Name">
-                        <input id="registrationEmail" type="text" class="form-control" name="registrationEmailInput" placeholder="MGA Email">
-                        <input id="registrationPhone" type="text" class="form-control" name="registrationPhoneInput" placeholder="Phone Number">
+                        <input id="FName" type="text" class="form-control" name="FName" placeholder="First Name">
+                        <input id="LName" type="text" class="form-control" name="LName" placeholder="Last Name">
+                        <input id="Email" type="text" class="form-control" name="Email" placeholder="MGA Email">
+                        <input id="Phone" type="text" class="form-control" name="Phone" placeholder="Phone Number">
                         <select class="selectpicker orangeDropdown form-control" data-width="100%">
                           <option selected disabled>Department</option>
                           <option value="Department01">Department01</option>
@@ -225,7 +237,7 @@
                           <option value="Department17">Department17</option>
                           <option value="Department18">Department18</option>
                         </select>
-                        <input id="registrationPassword" type="password" class="form-control" name="registrationpasswordInput" placeholder="Password">
+                        <input id="registrationPassword" type="password" class="form-control" name="Password" placeholder="Password">
                       </div>
                     </div>
 
@@ -280,10 +292,9 @@
 
                     <div class="col-xs-1"></div>
                   </div>
-
                   <div class="text-center">
-                    <label><input type="checkbox" value="agree">&nbsp;I have read and agree to the Terms &amp; Conditions.</label><br><br>
-                    <input type="submit" class="btn btn-primary" name="submitRegistrationButton" value="Submit Registration"><br>
+                    <label><input type="checkbox" name="agree" id="agree" value="agree">&nbsp;I have read and agree to the Terms &amp; Conditions.</label><br><br>
+                    <input type="submit" class="btn btn-primary" name="Register" value="Submit Registration"><br>
                   </div>
 
                 </form>
